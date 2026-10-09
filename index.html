@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Berkut Convert</title>
+<style>
+:root{
+  --bg:#0f1218;--card:#171c26;--card2:#1f2533;--border:#2a3242;
+  --text:#e8eef8;--text2:#8b95ad;--accent:#5b8fff;--accent2:#3568d4;
+  --success:#2ecc71;--danger:#ff5566;--gold:#f0b940;
+}
+body.light{--bg:#f4f6fa;--card:#fff;--card2:#f7f9fc;--border:#dde3ee;--text:#0f1622;--text2:#5a6580;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  min-height:100vh;padding:16px;
+  background-image:radial-gradient(circle at 50% 0%,var(--card2) 0%,var(--bg) 70%);
+  transition:.2s;
+}
+.wrap{max-width:720px;margin:0 auto;}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+h1{font-size:22px;font-weight:900;letter-spacing:-.3px;}
+h1 span{color:var(--accent);}
+.sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.theme-btn{
+  width:38px;height:38px;border-radius:50%;background:var(--card);
+  border:1px solid var(--border);cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;color:var(--text);
+}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;}
+
+.mode-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;margin-bottom:4px;}
+.mode-tabs::-webkit-scrollbar{display:none;}
+.mode-tab{
+  padding:8px 14px;background:var(--card2);border:1px solid var(--border);
+  border-radius:20px;font-size:12px;font-weight:700;color:var(--text2);
+  cursor:pointer;white-space:nowrap;transition:.15s;flex-shrink:0;
+  display:flex;align-items:center;gap:6px;
+}
+.mode-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+.drop{
+  border:2px dashed var(--border);border-radius:14px;padding:36px 20px;
+  text-align:center;cursor:pointer;transition:.2s;background:var(--card);
+}
+.drop:hover,.drop.drag{border-color:var(--accent);background:var(--card2);}
+.drop input{display:none;}
+.drop-icon{font-size:44px;margin-bottom:10px;opacity:.5;}
+.drop-title{font-size:15px;font-weight:800;margin-bottom:4px;}
+.drop-hint{font-size:11px;color:var(--text2);}
+
+.file-info{
+  display:flex;align-items:center;gap:12px;
+  padding:12px;background:var(--card2);border-radius:10px;
+}
+.file-icon{
+  width:44px;height:44px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;flex-shrink:0;font-size:13px;color:#fff;
+}
+.file-meta{flex:1;min-width:0;}
+.file-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.file-size{font-size:11px;color:var(--text2);margin-top:2px;}
+
+.field{margin-bottom:12px;}
+.field label{
+  display:block;font-size:11px;font-weight:800;letter-spacing:1px;
+  text-transform:uppercase;color:var(--text2);margin-bottom:6px;
+}
+.field select,.field input[type=number]{
+  width:100%;padding:12px;background:var(--card2);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-size:14px;outline:none;
+}
+.field select:focus{border-color:var(--accent);}
+.field input[type=range]{width:100%;accent-color:var(--accent);}
+
+.btn{
+  padding:13px 18px;background:var(--card2);border:1px solid var(--border);
+  border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;
+  transition:.15s;display:inline-flex;align-items:center;justify-content:center;
+  gap:8px;font-family:inherit;color:inherit;width:100%;
+}
+.btn:hover{background:#262e3d;border-color:var(--accent);}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn.primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-color:transparent;color:#fff;
+}
+.btn.primary:hover{filter:brightness(1.1);}
+.btn.success{background:var(--success);border-color:transparent;color:#fff;}
+.btn.danger{color:var(--danger);border-color:rgba(255,85,102,.4);background:transparent;}
+.btn.sm{padding:8px 12px;font-size:11px;width:auto;}
+
+.status{
+  padding:12px;border-radius:10px;font-size:13px;font-weight:700;
+  margin-top:12px;display:none;line-height:1.5;
+}
+.status.show{display:block;}
+.status.info{background:rgba(91,143,255,.12);color:var(--accent);}
+.status.ok{background:rgba(46,204,113,.12);color:var(--success);}
+.status.err{background:rgba(255,85,102,.12);color:var(--danger);}
+
+.hint{font-size:11px;color:var(--text2);line-height:1.6;margin-top:10px;}
+.hint b{color:var(--text);}
+
+.spinner{
+  display:inline-block;width:14px;height:14px;
+  border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  border-radius:50%;animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.batch-list{margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;}
+.batch-item{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:8px 10px;background:var(--card2);border-radius:8px;font-size:11px;
+}
+.batch-item .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.batch-item .s{color:var(--text2);}
+.batch-item .s.ok{color:var(--success);}
+.batch-item .s.err{color:var(--danger);}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header">
+    <div>
+      <h1>Berkut <span>Convert</span></h1>
+      <div class="sub">Локальный конвертер файлов · без загрузки на сервер</div>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="Тема">🌙</button>
+  </div>
+
+  <div class="card">
+    <div class="mode-tabs" id="modeTabs">
+      <div class="mode-tab active" data-mode="image">🖼 Изображения</div>
+      <div class="mode-tab" data-mode="data">📊 Данные</div>
+      <div class="mode-tab" data-mode="text">📄 Текст</div>
+      <div class="mode-tab" data-mode="audio">🎵 Аудио</div>
+      <div class="mode-tab" data-mode="video">🎬 Видео</div>
+      <div class="mode-tab" data-mode="archive">📦 Архивы</div>
+      <div class="mode-tab" data-mode="pdf">📕 PDF</div>
+      <div class="mode-tab" data-mode="font">🔤 Шрифты</div>
+    </div>
+
+    <div class="drop" id="drop">
+      <input type="file" id="fileInput" multiple>
+      <div class="drop-icon">📁</div>
+      <div class="drop-title">Перетащи файлы сюда</div>
+      <div class="drop-hint">или нажми чтобы выбрать (можно несколько)</div>
+    </div>
+
+    <div id="fileList" style="margin-top:12px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label>Формат для конвертации</label>
+      <select id="targetFormat"></select>
+    </div>
+
+    <div id="imageOptions" style="display:none;">
+      <div class="field">
+        <label>Качество JPG/WebP: <span id="qualityVal">90</span>%</label>
+        <input type="range" id="quality" min="10" max="100" value="90">
+      </div>
+      <div class="field">
+        <label>Макс. ширина (0 = не менять)</label>
+        <input type="number" id="maxWidth" value="0" min="0" max="10000">
+      </div>
+    </div>
+
+    <div id="audioOptions" style="display:none;">
+      <div class="field">
+        <label>Битрейт аудио</label>
+        <select id="audioBitrate">
+          <option value="64">64 kbps</option>
+          <option value="128" selected>128 kbps</option>
+          <option value="192">192 kbps</option>
+          <option value="320">320 kbps</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn primary" id="btnConvert" disabled>
+      <span id="btnText">⚡ Конвертировать</span>
+    </button>
+
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;">
+      <b>Berkut Convert</b> работает полностью в браузере. Файлы <b>не отправляются на сервер</b>.
+      Конвертация происходит прямо на твоём устройстве.
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* =========================================================
+   BERKUT CONVERT
+   ========================================================= */
+
+const $ = id => document.getElementById(id);
+
+/* ---------- FORMATS BY MODE ---------- */
+const FORMATS = {
+  image:{
+    exts:['png','jpg','jpeg','webp','gif','bmp','svg','avif','ico'],
+    targets:['png','jpg','webp','bmp'],
+    mime:{png:'image/png',jpg:'image/jpeg',webp:'image/webp',bmp:'image/bmp'}
+  },
+  data:{
+    exts:['json','csv','tsv','xml','yaml','yml','txt'],
+    targets:['json','csv','tsv','xml','yaml'],
+  },
+  text:{
+    exts:['txt','md','html','css','js','log','ini','conf','xml','json'],
+    targets:['txt','md','html','json','base64'],
+  },
+  audio:{
+    exts:['mp3','wav','ogg','m4a','aac','flac','opus','webm'],
+    targets:['wav','mp3','ogg','m4a'],
+  },
+  video:{
+    exts:['mp4','webm','mov','avi','mkv','gif'],
+    targets:['webm','mp4','gif'],
+  },
+  archive:{
+    exts:['zip','tar','gz','7z','rar'],
+    targets:['zip'],
+  },
+  pdf:{
+    exts:['pdf','png','jpg','jpeg'],
+    targets:['png','jpg','pdf'],
+  },
+  font:{
+    exts:['ttf','otf','woff','woff2'],
+    targets:['woff','woff2','base64'],
+  }
+};
+
+let currentMode = 'image';
+let files = [];
+
+/* ---------- THEME ---------- */
+const theme = localStorage.getItem('bk_convert_theme') || 'dark';
+if(theme === 'light') document.body.classList.add('light');
+$('themeBtn').textContent = theme === 'light' ? '☀️' : '🌙';
+$('themeBtn').onclick = ()=>{
+  document.body.classList.toggle('light');
+  const isLight = document.body.classList.contains('light');
+  localStorage.setItem('bk_convert_theme', isLight ? 'light' : 'dark');
+  $('themeBtn').textContent = isLight ? '☀️' : '🌙';
+};
+
+/* ---------- MODE SWITCHING ---------- */
+function updateTargets(){
+  const list = FORMATS[currentMode].targets;
+  const sel = $('targetFormat');
+  sel.innerHTML = list.map(f => `<option value="${f}">${f.toUpperCase()}</option>`).join('');
+  $('imageOptions').style.display = currentMode === 'image' ? 'block' : 'none';
+  $('audioOptions').style.display = currentMode === 'audio' ? 'block' : 'none';
+}
+
+$('modeTabs').onclick = e=>{
+  const tab = e.target.closest('.mode-tab');
+  if(!tab) return;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  currentMode = tab.dataset.mode;
+  updateTargets();
+  updateConvertBtn();
+};
+
+/* ---------- DROP ---------- */
+const drop = $('drop');
+const fileInput = $('fileInput');
+
+drop.onclick = ()=>fileInput.click();
+fileInput.onchange = e => addFiles(e.target.files);
+
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', ()=>drop.classList.remove('drag'));
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('drag');
+  addFiles(e.dataTransfer.files);
+});
+
+function addFiles(list){
+  const arr = Array.from(list || []);
+  if(!arr.length) return;
+  const allowedExts = FORMATS[currentMode].exts;
+  const filtered = arr.filter(f => {
+    const ext = f.name.split('.').pop().toLowerCase();
+    return allowedExts.includes(ext);
+  });
+  if(!filtered.length){
+    showStatus('Ни один файл не подходит под режим "' + currentMode + '"', 'err');
+    return;
+  }
+  files = files.concat(filtered);
+  renderFiles();
+  updateConvertBtn();
+}
+
+function renderFiles(){
+  const el = $('fileList');
+  if(!files.length){ el.innerHTML = ''; return; }
+  el.innerHTML = `<div style="font-size:11px;color:var(--text2);margin-bottom:8px;">Выбрано: ${files.length}</div>` +
+    files.map((f,i)=>{
+      const ext = f.name.split('.').pop().toUpperCase();
+      return `
+        <div class="file-info" style="margin-bottom:6px;">
+          <div class="file-icon">${ext.slice(0,4)}</div>
+          <div class="file-meta">
+            <div class="file-name">${escHtml(f.name)}</div>
+            <div class="file-size">${fmtSize(f.size)}</div>
+          </div>
+          <button class="btn danger sm" data-remove="${i}">✕</button>
+        </div>
+      `;
+    }).join('');
+  el.querySelectorAll('[data-remove]').forEach(b=>{
+    b.onclick = ()=>{
+      files.splice(+b.dataset.remove, 1);
+      renderFiles();
+      updateConvertBtn();
+    };
+  });
+}
+
+function updateConvertBtn(){
+  $('btnConvert').disabled = files.length === 0;
+}
+
+$('btnClear')?.addEventListener('click', ()=>{ files = []; renderFiles(); updateConvertBtn(); });
+
+/* ---------- UTILS ---------- */
+function fmtSize(b){
+  if(b < 1024) return b + ' B';
+  if(b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/1024/1024).toFixed(2) + ' MB';
+}
+function escHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function showStatus(msg, type){
+  const s = $('status');
+  s.textContent = msg;
+  s.className = 'status show ' + (type || 'info');
+}
+function hideStatus(){ $('status').className = 'status'; }
+function readText(file){ return file.text(); }
+function readBuffer(file){ return file.arrayBuffer(); }
+
+/* ---------- DOWNLOAD ---------- */
+function download(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+function downloadText(text, filename, mime){
+  download(new Blob([text], {type:mime || 'text/plain'}), filename);
+}
+
+/* =========================================================
+   CONVERTERS
+   ========================================================= */
+
+/* ---------- IMAGE ---------- */
+async function convertImage(file, target){
+  const quality = parseInt($('quality').value) / 100;
+  const maxW = parseInt($('maxWidth').value) || 0;
+
+  // SVG → raster: сначала в img через blob
+  if(file.name.toLowerCase().endsWith('.svg') && target !== 'svg'){
+    const text = await file.text();
+    const svgBlob = new Blob([text], {type:'image/svg+xml'});
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    await new Promise((res, rej)=>{ img.onload = res; img.onerror = rej; img.src = url; });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width || 512;
+    canvas.height = img.height || 512;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    return canvasToBlob(canvas, target, quality);
+  }
+
+  // Обычное изображение
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  await new Promise((res, rej)=>{ img.onload = res; img.onerror = rej; img.src = url; });
+  URL.revokeObjectURL(url);
+
+  let w = img.width, h = img.height;
+  if(maxW && w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvasToBlob(canvas, target, quality);
+}
+
+function canvasToBlob(canvas, target, quality){
+  return new Promise((res, rej)=>{
+    const mime = FORMATS.image.mime[target] || 'image/png';
+    // BMP нет в toBlob → делаем вручную
+    if(target === 'bmp'){
+      res(canvasToBmp(canvas));
+      return;
+    }
+    canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), mime, quality);
+  });
+}
+
+function canvasToBmp(canvas){
+  const ctx = canvas.getContext('2d');
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const w = canvas.width, h = canvas.height;
+  const rowSize = Math.floor((24 * w + 31) / 32) * 4;
+  const pixelSize = rowSize * h;
+  const fileSize = 54 + pixelSize;
+  const buf = new ArrayBuffer(fileSize);
+  const view = new DataView(buf);
+  view.setUint8(0, 0x42); view.setUint8(1, 0x4D);
+  view.setUint32(2, fileSize, true);
+  view.setUint32(10, 54, true);
+  view.setUint32(14, 40, true);
+  view.setInt32(18, w, true);
+  view.setInt32(22, -h, true);
+  view.setUint16(26, 1, true);
+  view.setUint16(28, 24, true);
+  view.setUint32(34, pixelSize, true);
+  let offset = 54;
+  for(let y = 0; y < h; y++){
+    for(let x = 0; x < w; x++){
+      const i = (y * w + x) * 4;
+      const b = imgData.data[i], g = imgData.data[i+1], r = imgData.data[i+2];
+      view.setUint8(offset++, b);
+      view.setUint8(offset++, g);
+      view.setUint8(offset++, r);
+    }
+    for(let p = w * 3; p < rowSize; p++) view.setUint8(offset++, 0);
+  }
+  return new Blob([buf], {type:'image/bmp'});
+}
+
+/* ---------- DATA ---------- */
+async function convertData(file, target){
+  const text = await readText(file);
+  const srcExt = file.name.split('.').pop().toLowerCase();
+  let data;
+
+  // Парсим вход
+  if(srcExt === 'json') data = JSON.parse(text);
+  else if(srcExt === 'csv') data = parseCSV(text);
+  else if(srcExt === 'tsv') data = parseCSV(text, '\t');
+  else if(srcExt === 'yaml' || srcExt === 'yml') data = parseSimpleYaml(text);
+  else if(srcExt === 'xml') data = parseSimpleXml(text);
+  else data = text;
+
+  // Сериализуем в целевой
+  if(target === 'json') return JSON.stringify(data, null, 2);
+  if(target === 'csv') return toCSV(data, ',');
+  if(target === 'tsv') return toCSV(data, '\t');
+  if(target === 'yaml') return toYAML(data);
+  if(target === 'xml') return toXML(data);
+  return String(data);
+}
+
+function parseCSV(text, sep){
+  sep = sep || ',';
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if(!lines.length) return [];
+  const headers = splitCSVLine(lines[0], sep);
+  return lines.slice(1).map(line => {
+    const vals = splitCSVLine(line, sep);
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = vals[i] || '');
+    return obj;
+  });
+}
+function splitCSVLine(line, sep){
+  const out = [];
+  let cur = '', inQ = false;
+  for(let i = 0; i < line.length; i++){
+    const c = line[i];
+    if(c === '"'){ inQ = !inQ; continue; }
+    if(c === sep && !inQ){ out.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+function toCSV(data, sep){
+  if(Array.isArray(data)){
+    if(!data.length) return '';
+    if(typeof data[0] === 'object'){
+      const headers = Object.keys(data[0]);
+      const lines = [headers.join(sep)];
+      data.forEach(row => lines.push(headers.map(h => {
+        let v = row[h] == null ? '' : String(row[h]);
+        if(v.includes(sep) || v.includes('"') || v.includes('\n')) v = '"' + v.replace(/"/g,'""') + '"';
+        return v;
+      }).join(sep)));
+      return lines.join('\n');
+    }
+    return data.join('\n');
+  }
+  return String(data);
+}
+function parseSimpleYaml(text){
+  const lines = text.split(/\r?\n/);
+  const out = {};
+  lines.forEach(line => {
+    const m = line.match(/^\s*([\w-]+)\s*:\s*(.*)$/);
+    if(m) out[m[1]] = m[2];
+  });
+  return out;
+}
+function toYAML(obj){
+  if(typeof obj !== 'object' || obj === null) return String(obj);
+  if(Array.isArray(obj)){
+    return obj.map(o => '- ' + JSON.stringify(o)).join('\n');
+  }
+  return Object.entries(obj).map(([k,v]) => {
+    if(typeof v === 'object' && v !== null) return k + ':\n' + toYAML(v).split('\n').map(l => '  ' + l).join('\n');
+    return k + ': ' + v;
+  }).join('\n');
+}
+function parseSimpleXml(text){
+  try{
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'text/xml');
+    return xmlToObj(doc.documentElement);
+  }catch(e){ return {error:'XML parse error'}; }
+}
+function xmlToObj(node){
+  const obj = {};
+  if(node.children.length === 0) return node.textContent;
+  for(const child of node.children){
+    const key = child.tagName;
+    const val = xmlToObj(child);
+    if(obj[key]){ if(!Array.isArray(obj[key])) obj[key] = [obj[key]]; obj[key].push(val); }
+    else obj[key] = val;
+  }
+  return obj;
+}
+function toXML(obj, root){
+  root = root || 'root';
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<' + root + '>';
+  if(typeof obj === 'object' && obj !== null){
+    xml += objToXml(obj);
+  } else {
+    xml += escapeXml(String(obj));
+  }
+  xml += '</' + root + '>';
+  return xml;
+}
+function objToXml(obj){
+  return Object.entries(obj).map(([k,v])=>{
+    if(Array.isArray(v)) return v.map(x => objToXml({[k]: x})).join('');
+    if(typeof v === 'object' && v !== null) return '<'+k+'>'+objToXml(v)+'</'+k+'>';
+    return '<'+k+'>'+escapeXml(String(v))+'</'+k+'>';
+  }).join('');
+}
+function escapeXml(s){ return s.replace(/[<>&'"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c])); }
+
+/* ---------- TEXT ---------- */
+async function convertText(file, target){
+  const srcExt = file.name.split('.').pop().toLowerCase();
+  let content = await readText(file);
+
+  if(target === 'base64'){
+    return btoa(unescape(encodeURIComponent(content)));
+  }
+  if(target === srcExt) return content;
+
+  if(target === 'json'){
+    // Попробуем преобразовать
+    if(srcExt === 'csv' || srcExt === 'tsv') return JSON.stringify(parseCSV(content, srcExt === 'tsv' ? '\t' : ','), null, 2);
+    return JSON.stringify({text: content}, null, 2);
+  }
+  if(target === 'html'){
+    return `<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><title>${file.name}</title></head><body><pre>${escHtml(content)}</pre></body></html>`;
+  }
+  if(target === 'md'){
+    return '# ' + file.name.replace(/\.[^.]+$/, '') + '\n\n' + content;
+  }
+  return content;
+}
+
+/* ---------- AUDIO ---------- */
+async function convertAudio(file, target){
+  const buf = await readBuffer(file);
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const audioBuf = await ctx.decodeAudioData(buf);
+
+  // AudioContext ограничивает до WAV (простая реализация)
+  if(target === 'wav'){
+    return encodeWav(audioBuf);
+  }
+
+  // Для mp3/ogg/m4a — используем MediaRecorder если поддерживается
+  if(target === 'mp3' && typeof MediaRecorder !== 'undefined'){
+    try{
+      return await encodeWithMediaRecorder(audioBuf, 'audio/mpeg');
+    }catch(e){
+      throw new Error('MP3 недоступен в этом браузере. Попробуй WAV.');
+    }
+  }
+  if(target === 'ogg' && typeof MediaRecorder !== 'undefined'){
+    try{
+      return await encodeWithMediaRecorder(audioBuf, 'audio/ogg');
+    }catch(e){
+      throw new Error('OGG недоступен в этом браузере. Попробуй WAV.');
+    }
+  }
+  if(target === 'm4a' && typeof MediaRecorder !== 'undefined'){
+    try{
+      return await encodeWithMediaRecorder(audioBuf, 'audio/mp4');
+    }catch(e){
+      throw new Error('M4A недоступен в этом браузере. Попробуй WAV.');
+    }
+  }
+
+  // Fallback — WAV
+  return encodeWav(audioBuf);
+}
+
+function encodeWav(audioBuf){
+  const numCh = audioBuf.numberOfChannels;
+  const len = audioBuf.length;
+  const sampleRate = audioBuf.sampleRate;
+  const bytesPerSample = 2;
+  const blockAlign = numCh * bytesPerSample;
+  const dataSize = len * blockAlign;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+
+  writeStr(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(view, 8, 'WAVE');
+  writeStr(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numCh, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * blockAlign, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true);
+  writeStr(view, 36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  let offset = 44;
+  const channels = [];
+  for(let i = 0; i < numCh; i++) channels.push(audioBuf.getChannelData(i));
+  for(let i = 0; i < len; i++){
+    for(let c = 0; c < numCh; c++){
+      let s = Math.max(-1, Math.min(1, channels[c][i]));
+      s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      view.setInt16(offset, s, true);
+      offset += 2;
+    }
+  }
+  return new Blob([buffer], {type:'audio/wav'});
+}
+function writeStr(view, off, str){
+  for(let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i));
+}
+
+async function encodeWithMediaRecorder(audioBuf, mimeType){
+  return new Promise((res, rej)=>{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const dest = ctx.createMediaStreamDestination();
+    const src = ctx.createBufferSource();
+    src.buffer = audioBuf;
+    src.connect(dest);
+    const rec = new MediaRecorder(dest.stream, {mimeType});
+    const chunks = [];
+    rec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+    rec.onstop = ()=>{ res(new Blob(chunks, {type:mimeType})); };
+    rec.onerror = rej;
+    rec.start();
+    src.start();
+    src.onended = ()=>{ setTimeout(()=>rec.stop(), 100); };
+  });
+}
+
+/* ---------- VIDEO ---------- */
+async function convertVideo(file, target){
+  // Прямая конвертация видео в браузере — очень ограничена.
+  // MediaRecorder умеет только webm/mp4 (если браузер поддерживает).
+  const srcMime = file.type;
+
+  if(target === 'webm' && typeof MediaRecorder !== 'undefined'){
+    return await transcodeVideo(file, 'video/webm');
+  }
+  if(target === 'mp4' && typeof MediaRecorder !== 'undefined'){
+    const canMP4 = MediaRecorder.isTypeSupported('video/mp4');
+    if(!canMP4) throw new Error('MP4-запись недоступна в этом браузере');
+    return await transcodeVideo(file, 'video/mp4');
+  }
+  if(target === 'gif'){
+    throw new Error('GIF-конвертация требует отдельного инструмента (не в браузере). Попробуй webm.');
+  }
+  throw new Error('Формат не поддерживается');
+}
+
+async function transcodeVideo(file, mimeType){
+  return new Promise((res, rej)=>{
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.src = url;
+    video.muted = true;
+    video.playsInline = true;
+
+    video.onloadedmetadata = ()=>{
+      const stream = video.captureStream ? video.captureStream() : null;
+      if(!stream){ URL.revokeObjectURL(url); rej(new Error('captureStream не поддерживается')); return; }
+
+      const rec = new MediaRecorder(stream, {mimeType});
+      const chunks = [];
+      rec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+      rec.onstop = ()=>{
+        URL.revokeObjectURL(url);
+        res(new Blob(chunks, {type:mimeType}));
+      };
+      rec.onerror = rej;
+      rec.start();
+      video.currentTime = 0;
+      video.play();
+      video.onended = ()=>rec.stop();
+    };
+    video.onerror = ()=>{ URL.revokeObjectURL(url); rej(new Error('Ошибка чтения видео')); };
+  });
+}
+
+/* ---------- ARCHIVE ---------- */
+async function convertArchive(file, target){
+  // Пересборка ZIP без сжатия (простой ZIP-кодировщик)
+  if(target === 'zip'){
+    // Обрабатываем только как ZIP — если это уже ZIP, возвращаем как есть
+    const ext = file.name.split('.').pop().toLowerCase();
+    if(ext === 'zip') return file;
+    throw new Error('Для .' + ext + ' → zip нужен полноценный архиватор');
+  }
+  throw new Error('Формат не поддерживается');
+}
+
+/* ---------- PDF ---------- */
+async function convertPdf(file, target){
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(ext === 'pdf' && (target === 'png' || target === 'jpg')){
+    throw new Error('PDF → изображение требует внешней библиотеки. Попробуй JPG → PDF.');
+  }
+  if((ext === 'png' || ext === 'jpg' || ext === 'jpeg') && target === 'pdf'){
+    return await imageToPdf(file);
+  }
+  throw new Error('Конвертация не поддерживается');
+}
+
+async function imageToPdf(file){
+  // Простейший PDF с одной картинкой
+  const buf = await readBuffer(file);
+  const b64 = arrayBufferToBase64(buf);
+  const ext = file.name.split('.').pop().toLowerCase();
+  const isJpg = ext === 'jpg' || ext === 'jpeg';
+
+  const img = new Image();
+  img.src = 'data:image/' + (isJpg ? 'jpeg' : 'png') + ';base64,' + b64;
+  await new Promise(r => img.onload = r);
+  const w = img.width, h = img.height;
+
+  const pdfHeader = '%PDF-1.4\n';
+  const imgObj = isJpg ? 'DCTDecode' : 'FlateDecode';
+  const pdf =
+    pdfHeader +
+    '1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n' +
+    '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n' +
+    '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 ' + w + ' ' + h + ']/Contents 4 0 R/Resources<</XObject<</Im0 5 0 R>>>>>>endobj\n' +
+    '4 0 obj<</Length 44>>stream\nq\n' + w + ' 0 0 ' + h + ' 0 0 cm\n/Im0 Do\nQ\nendstream\nendobj\n' +
+    '5 0 obj<</Type/XObject/Subtype/Image/Width ' + w + '/Height ' + h + '/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter ' + imgObj + '/Length ' + buf.byteLength + '>>stream\n' + b64 + '\nendstream\nendobj\n' +
+    'xref\n0 6\n0000000000 65535 f \ntrailer<</Size 6/Root 1 0 R>>\nstartxref\n0\n%%EOF';
+
+  return new Blob([pdf], {type:'application/pdf'});
+}
+
+function arrayBufferToBase64(buf){
+  let bin = '';
+  const bytes = new Uint8Array(buf);
+  for(let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+/* ---------- FONT ---------- */
+async function convertFont(file, target){
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(target === 'base64'){
+    const buf = await readBuffer(file);
+    return arrayBufferToBase64(buf);
+  }
+  if(ext === target) return file;
+  throw new Error('Конвертация шрифтов между форматами требует библиотеки fonttools');
+}
+
+/* =========================================================
+   MAIN CONVERT
+   ========================================================= */
+$('btnConvert').onclick = async ()=>{
+  if(!files.length) return;
+  const target = $('targetFormat').value;
+  if(!target){ showStatus('Выбери формат', 'err'); return; }
+
+  $('btnConvert').disabled = true;
+  $('btnText').innerHTML = '<span class="spinner"></span> Конвертация...';
+  hideStatus();
+
+  let success = 0, failed = 0;
+  for(const file of files){
+    try{
+      const ext = file.name.split('.').pop().toLowerCase();
+      const baseName = file.name.replace(/\.[^.]+$/, '');
+      let result, mime, newExt = target;
+
+      if(currentMode === 'image'){
+        const blob = await convertImage(file, target);
+        result = blob; mime = blob.type;
+      } else if(currentMode === 'data'){
+        const text = await convertData(file, target);
+        result = text; mime = 'text/plain';
+      } else if(currentMode === 'text'){
+        const text = await convertText(file, target);
+        result = text; mime = 'text/plain';
+      } else if(currentMode === 'audio'){
+        const blob = await convertAudio(file, target);
+        result = blob; mime = blob.type;
+      } else if(currentMode === 'video'){
+        const blob = await convertVideo(file, target);
+        result = blob; mime = blob.type;
+      } else if(currentMode === 'archive'){
+        result = await convertArchive(file, target);
+        mime = result.type || 'application/zip';
+      } else if(currentMode === 'pdf'){
+        const blob = await convertPdf(file, target);
+        result = blob; mime = blob.type;
+      } else if(currentMode === 'font'){
+        const out = await convertFont(file, target);
+        result = out;
+        mime = target === 'base64' ? 'text/plain' : 'font/' + target;
+      }
+
+      const filename = baseName + '.' + newExt;
+      if(result instanceof Blob){
+        download(result, filename);
+      } else {
+        downloadText(String(result), filename, mime);
+      }
+      success++;
+      await new Promise(r => setTimeout(r, 100));
+    }catch(e){
+      console.error(e);
+      failed++;
+      showStatus('Ошибка с "' + file.name + '": ' + e.message, 'err');
+    }
+  }
+
+  $('btnConvert').disabled = false;
+  $('btnText').textContent = '⚡ Конвертировать';
+
+  if(success){
+    showStatus('✓ Готово: ' + success + (failed ? ', ошибок: ' + failed : ''), failed ? 'info' : 'ok');
+    files = [];
+    renderFiles();
+    updateConvertBtn();
+  }
+};
+
+/* ---------- INIT ---------- */
+updateTargets();
+updateConvertBtn();
+</script>
+</body>
+</html>
